@@ -11,7 +11,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false });
 
 const bookSchema = new mongoose.Schema({
   title: String,
@@ -66,6 +66,14 @@ module.exports = function (app) {
       let bookid = req.params.id;
       let comment = req.body.comment;
       //json res format same as .get
+      if (comment) {
+        Book.findByIdAndUpdate(bookid, { $push: { comments: comment } }, { new: true, omitUndefined: true }, function (err, doc) {
+          if (err || !doc) return res.status(200).send('no book exists');
+          res.status(200).json({ _id: doc._id, title: doc.title, comments: doc.comments, commentcount: doc.comments.length });
+        })
+      } else {
+        return res.status(200).send('missing required field comment');
+      }
     })
 
     .delete(function (req, res) {
